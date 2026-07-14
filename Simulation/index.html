@@ -1,511 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GTA Local simulation Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-gradient: linear-gradient(135deg, #050608 0%, #0d1117 100%);
-      --panel-bg: rgba(22, 27, 34, 0.4);
-      --panel-border: rgba(255, 255, 255, 0.07);
-      --accent-green: #00ff88;
-      --accent-yellow: #ffcc00;
-      --accent-red: #ff3366;
-      --accent-blue: #00ccff;
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
-      --shadow-neon: 0 0 20px rgba(0, 255, 136, 0.15);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--bg-gradient);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
-      overflow-x: hidden;
-    }
-
-    .container {
-      max-width: 1000px;
-      width: 100%;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    header h1 {
-      font-size: 3rem;
-      font-weight: 800;
-      letter-spacing: 2px;
-      background: linear-gradient(90deg, #ffcc00, #ff3366);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-      margin-bottom: 10px;
-    }
-
-    header p {
-      color: var(--text-muted);
-      font-size: 1.1rem;
-    }
-
-    /* Dashboard Layout */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 30px;
-      margin-bottom: 30px;
-    }
-
-    @media (max-width: 800px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .panel {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      padding: 30px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .panel:hover {
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .panel-title {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 25px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* Stats Display */
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .stat-label {
-      color: var(--text-muted);
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .stat-val {
-      font-size: 1.8rem;
-      font-weight: 800;
-      transition: color 0.3s;
-    }
-
-    .money-val {
-      color: var(--accent-green);
-      text-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
-    }
-
-    /* Stars / Wanted level styling */
-    .wanted-stars {
-      display: flex;
-      gap: 5px;
-    }
-
-    .star {
-      font-size: 1.8rem;
-      color: rgba(255, 255, 255, 0.15);
-      transition: color 0.3s, transform 0.3s;
-    }
-
-    .star.active {
-      color: var(--accent-yellow);
-      text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-      animation: pulse 1s infinite alternate;
-    }
-
-    /* Status Bar indicators */
-    .bar-container {
-      width: 100%;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 5px;
-      overflow: hidden;
-      margin-top: 5px;
-    }
-
-    .bar-fill {
-      height: 100%;
-      width: 0%;
-      transition: width 0.5s ease-out;
-    }
-
-    .health-fill { background: var(--accent-red); }
-    .armor-fill { background: var(--accent-blue); }
-
-    /* Action Buttons */
-    .action-btn {
-      width: 100%;
-      padding: 16px;
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.02);
-      color: var(--text-main);
-      font-family: inherit;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .action-btn:last-child {
-      margin-bottom: 0;
-    }
-
-    .action-btn span.badge {
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 800;
-    }
-
-    .btn-car:hover {
-      background: rgba(255, 204, 0, 0.07);
-      border-color: var(--accent-yellow);
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.15);
-      transform: translateY(-2px);
-    }
-    .btn-car span.badge { background: rgba(255, 204, 0, 0.15); color: var(--accent-yellow); }
-
-    .btn-heist:hover {
-      background: rgba(0, 255, 136, 0.07);
-      border-color: var(--accent-green);
-      box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
-      transform: translateY(-2px);
-    }
-    .btn-heist span.badge { background: rgba(0, 255, 136, 0.15); color: var(--accent-green); }
-
-    .btn-customs:hover {
-      background: rgba(0, 204, 255, 0.07);
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 15px rgba(0, 204, 255, 0.15);
-      transform: translateY(-2px);
-    }
-    .btn-customs span.badge { background: rgba(0, 204, 255, 0.15); color: var(--accent-blue); }
-
-    /* Vector/Coordinates Panel */
-    .coordinate-box {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px dashed rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 15px;
-      font-family: monospace;
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    .coordinate-box span {
-      color: var(--text-main);
-      font-weight: bold;
-    }
-
-    /* Logs feed panel */
-    .log-panel {
-      margin-top: 30px;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .log-entry {
-      font-size: 0.9rem;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-      color: var(--text-muted);
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    .log-entry span.time {
-      color: rgba(255, 255, 255, 0.2);
-      margin-right: 10px;
-    }
-
-    .log-entry.success { color: var(--accent-green); }
-    .log-entry.warning { color: var(--accent-yellow); }
-
-    @keyframes pulse {
-      from { transform: scale(1); }
-      to { transform: scale(1.1); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>GTA Web Live Simulation</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #111; }
+        #hud { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; font-size: 18px; pointer-events: none; }
+        #controls { position: absolute; bottom: 20px; left: 20px; color: #aaa; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; font-size: 12px; }
+        .star { color: #ffcc00; font-size: 22px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <h1>LOS SANTOS SIMULATOR</h1>
-      <p>Local state synchronizer & metrics dashboard</p>
-    </header>
-
-    <div class="dashboard-grid">
-      <!-- Player Profile Stats -->
-      <div class="panel">
-        <div class="panel-title">
-          👤 Player Profile: shiv (ID: 1)
-        </div>
-
-        <div class="stat-row">
-          <div class="stat-label">Bank Account</div>
-          <div id="money-display" class="stat-val money-val">$0</div>
-        </div>
-
-        <div class="stat-row">
-          <div class="stat-label">Wanted Level</div>
-          <div class="wanted-stars" id="stars-display">
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-            <span class="star">★</span>
-          </div>
-        </div>
-
-        <div class="stat-row" style="margin-top: 30px; flex-direction: column; align-items: flex-start;">
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span class="stat-label">Health</span>
-            <span id="health-pct" style="font-weight: bold;">0%</span>
-          </div>
-          <div class="bar-container">
-            <div id="health-bar" class="bar-fill health-fill"></div>
-          </div>
-        </div>
-
-        <div class="stat-row" style="margin-top: 20px; flex-direction: column; align-items: flex-start;">
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span class="stat-label">Armor</span>
-            <span id="armor-pct" style="font-weight: bold;">0%</span>
-          </div>
-          <div class="bar-container">
-            <div id="armor-bar" class="bar-fill armor-fill"></div>
-          </div>
-        </div>
-
-        <div style="margin-top: 35px;">
-          <div class="stat-label" style="margin-bottom: 10px;">Transform Vector</div>
-          <div class="coordinate-box" id="vector-display">
-            X: <span>0.00</span> | Y: <span>0.00</span> | Z: <span>0.00</span> | Yaw: <span>0°</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Panel -->
-      <div class="panel">
-        <div class="panel-title">
-          🎮 Trigger Actions
-        </div>
-
-        <button class="action-btn btn-car" onclick="triggerAction('car')">
-          🚗 Steal Zentorno Sports Car
-          <span class="badge">+$5,000 | +1 ⭐️</span>
-        </button>
-
-        <button class="action-btn btn-heist" onclick="triggerAction('heist')">
-          💰 Complete Maze Bank Heist
-          <span class="badge">+$20,000 | +3 ⭐️</span>
-        </button>
-
-        <button class="action-btn btn-customs" onclick="triggerAction('customs')">
-          🔧 Respray at LS Customs
-          <span class="badge">-$1,000 | Clear Stars</span>
-        </button>
-
-        <div style="margin-top: 30px;">
-          <div class="panel-title" style="font-size: 1.1rem; margin-bottom: 15px;">
-            📝 Session Activity Logs
-          </div>
-          <div class="log-panel" id="log-display">
-            <div class="log-entry"><span class="time">00:00:00</span>Dashboard initialized. Connecting to localhost:3001...</div>
-          </div>
-        </div>
-      </div>
+    <div id="hud">
+        <h2>LOS SANTOS (WEB 3D)</h2>
+        <div>💰 Money: <span id="money">$0</span></div>
+        <div>🚨 Wanted Level: <span id="stars">None</span></div>
+        <div style="margin-top: 10px; font-size: 14px; color: #4caf50;" id="status">Connecting to server...</div>
     </div>
-  </div>
 
-  <script>
-    const API_BASE = "http://localhost:3001";
-    const USER_ID = 1;
+    <div id="controls">
+        <b>Controls:</b> W, A, S, D to Move Player | <b>F</b> to Enter/Exit Car | <b>H</b> to Trigger Heist
+    </div>
 
-    let currentMoney = 0;
-    let currentWanted = 0;
+    <script>
+        const SERVER_URL = "http://localhost:3001";
+        const USERNAME = "shiv";
+        let USER_ID = 1; // Default fallback
 
-    // Add visual log entry
-    function addLog(text, type = "") {
-      const logDisplay = document.getElementById("log-display");
-      const time = new Date().toTimeString().split(' ')[0];
-      const entry = document.createElement("div");
-      entry.className = `log-entry ${type}`;
-      entry.innerHTML = `<span class="time">${time}</span>${text}`;
-      logDisplay.prepend(entry);
-    }
+        // 1. Setup 3D Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa0a0a0);
+        scene.fog = new THREE.Fog(0xa0a0a0, 10, 50);
 
-    // Refresh display elements
-    function updateUI(data) {
-      currentMoney = data.money;
-      currentWanted = data.wanted_level;
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
 
-      // Money Display
-      document.getElementById("money-display").innerText = `$${currentMoney.toLocaleString()}`;
+        // Lights
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 20, 10);
+        light.castShadow = true;
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
 
-      // Wanted Stars
-      const stars = document.getElementById("stars-display").children;
-      for (let i = 0; i < 5; i++) {
-        if (i < currentWanted) {
-          stars[i].classList.add("active");
-        } else {
-          stars[i].classList.remove("active");
-        }
-      }
+        // Ground (City Grid)
+        const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x444444);
+        gridHelper.position.y = -0.01;
+        scene.add(gridHelper);
 
-      // Progress Bars
-      document.getElementById("health-pct").innerText = `${data.health}%`;
-      document.getElementById("health-bar").style.width = `${data.health}%`;
-      document.getElementById("armor-pct").innerText = `${data.armor}%`;
-      document.getElementById("armor-bar").style.width = `${data.armor}%`;
+        // 2. Create Objects (Player and Car)
+        // Player (Blue Box)
+        const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.set(0, 1, 0);
+        scene.add(player);
 
-      // Coordinates
-      document.getElementById("vector-display").innerHTML = `
-        X: <span>${data.pos_x.toFixed(2)}</span> | 
-        Y: <span>${data.pos_y.toFixed(2)}</span> | 
-        Z: <span>${data.pos_z.toFixed(2)}</span> | 
-        Yaw: <span>${data.rot_yaw}°</span>
-      `;
-    }
+        // Car (Red Box)
+        const carGeo = new THREE.BoxGeometry(2, 1.2, 4);
+        const carMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const car = new THREE.Mesh(carGeo, carMat);
+        car.position.set(5, 0.6, -5);
+        scene.add(car);
 
-    // Fetch save file metrics
-    async function fetchState() {
-      try {
-        const response = await fetch(`${API_BASE}/save/${USER_ID}`);
-        if (response.ok) {
-          const data = await response.json();
-          updateUI(data);
-        } else if (response.status === 404) {
-          addLog("⚠️ Profile not registered. Trying to create profile...", "warning");
-          await registerUser();
-        }
-      } catch (err) {
-        addLog("❌ Connection Error: Backend server is offline on port 3001.", "warning");
-      }
-    }
+        // 3. Gameplay Variables
+        let playerStats = { money: 0, wanted_level: 0 };
+        let keys = {};
+        let inCar = false;
+        let moveSpeed = 0.15;
 
-    // Auto-Register user shiv if missing
-    async function registerUser() {
-      try {
-        const response = await fetch(`${API_BASE}/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: "shiv", password: "gta123" })
+        // Input Listeners
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+        // Interaction (Enter Car / Heist)
+        window.addEventListener('keypress', e => {
+            if (e.key.toLowerCase() === 'f') {
+                let dist = player.position.distanceTo(car.position);
+                if (dist < 3 && !inCar) {
+                    inCar = true;
+                    player.visible = false;
+                    document.getElementById('status').innerText = "Driving Car...";
+                    updateServer(500, 1); // Earn $500 for grand theft auto
+                } else if (inCar) {
+                    inCar = false;
+                    player.position.copy(car.position).x += 2; // Spawn next to car
+                    player.visible = true;
+                    document.getElementById('status').innerText = "On Foot";
+                }
+            }
+            if (e.key.toLowerCase() === 'h') {
+                document.getElementById('status').innerText = "Heist Successful! Police Alerted!";
+                updateServer(10000, 3); // Earn $10,000, +3 Stars
+            }
         });
-        if (response.ok) {
-          addLog("✅ User 'shiv' registered and synchronized on server.", "success");
-          fetchState();
+
+        // 4. Sync with Live Port 3001 Server
+        async function authenticateUser() {
+            try {
+                // Try Login
+                let loginRes = await fetch(`${SERVER_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: USERNAME, password: "gta123" })
+                });
+                
+                if (loginRes.ok) {
+                    let loginData = await loginRes.json();
+                    USER_ID = loginData.userId;
+                    document.getElementById('status').innerText = `Logged in as shiv (ID: ${USER_ID})`;
+                } else {
+                    // Try Register
+                    let regRes = await fetch(`${SERVER_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: USERNAME, password: "gta123" })
+                    });
+                    if (regRes.ok) {
+                        let regData = await regRes.json();
+                        USER_ID = regData.user.id;
+                        document.getElementById('status').innerText = `Registered profile. ID: ${USER_ID}`;
+                    }
+                }
+            } catch(e) {
+                console.warn("Auth server offline. Using local mock state.");
+                document.getElementById('status').innerText = "Using Offline Mock DB";
+            }
+            
+            // Initial fetch
+            fetchServerState();
         }
-      } catch (err) {
-        console.error("Auto-registration failed:", err);
-      }
-    }
 
-    // POST updates
-    async function triggerAction(actionType) {
-      let bodyData = {};
-
-      if (actionType === 'car') {
-        bodyData = {
-          money: 5000,
-          pos_x: 1420.5,
-          pos_y: -600.3,
-          pos_z: 12.4,
-          rot_yaw: 90,
-          wanted_level: Math.min(currentWanted + 1, 5)
-        };
-        addLog("🚗 Request: Stealing a Zentorno Sports Car...", "success");
-      } else if (actionType === 'heist') {
-        bodyData = {
-          money: 20000,
-          pos_x: -120.4,
-          pos_y: -800.8,
-          pos_z: 42.1,
-          rot_yaw: 180,
-          wanted_level: Math.min(currentWanted + 3, 5)
-        };
-        addLog("💰 Request: Completing Maze Bank Heist...", "success");
-      } else if (actionType === 'customs') {
-        if (currentMoney < 1000) {
-          addLog("❌ Action Refused: Insufficient funds to clear Wanted Level.", "warning");
-          return;
+        async function fetchServerState() {
+            try {
+                let res = await fetch(`${SERVER_URL}/save/${USER_ID}`);
+                if (res.ok) {
+                    let data = await res.json();
+                    playerStats.money = data.money || 0;
+                    playerStats.wanted_level = data.wanted_level || 0;
+                    
+                    // Sync 3D position if not driving
+                    if (!inCar && data.pos_x !== 0) {
+                        player.position.set(data.pos_x, data.pos_y, data.pos_z);
+                    }
+                    updateHUD();
+                }
+            } catch(e) {
+                console.log("Server unreachable, falling back to local simulation logic");
+            }
         }
-        bodyData = {
-          money: -1000,
-          pos_x: 730.2,
-          pos_y: -240.5,
-          pos_z: 22.0,
-          rot_yaw: 270,
-          wanted_level: 0
-        };
-        addLog("🔧 Request: Changing plate number at LS Customs...", "success");
-      }
 
-      try {
-        const response = await fetch(`${API_BASE}/save/${USER_ID}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bodyData)
-        });
-        
-        if (response.ok) {
-          const resJson = await response.json();
-          addLog("✨ State successfully updated on server database.", "success");
-          updateUI(resJson.saveState);
+        async function updateServer(moneyGain, wantedGain) {
+            let nextWanted = Math.min(5, playerStats.wanted_level + wantedGain);
+            let currentObj = inCar ? car : player;
+
+            try {
+                let res = await fetch(`${SERVER_URL}/save/${USER_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        money: moneyGain, // Send incremental change
+                        wanted_level: nextWanted,
+                        pos_x: currentObj.position.x,
+                        pos_y: currentObj.position.y,
+                        pos_z: currentObj.position.z,
+                        rot_yaw: Math.round(currentObj.rotation.y * (180 / Math.PI))
+                    })
+                });
+
+                if (res.ok) {
+                    let resJson = await response.json();
+                    playerStats.money = resJson.saveState.money;
+                    playerStats.wanted_level = resJson.saveState.wanted_level;
+                } else {
+                    playerStats.money += moneyGain;
+                    playerStats.wanted_level = nextWanted;
+                }
+            } catch(e) { 
+                // Local fallback on connection issues
+                playerStats.money += moneyGain;
+                playerStats.wanted_level = nextWanted;
+            }
+
+            updateHUD();
         }
-      } catch (err) {
-        addLog("❌ Error connecting to database endpoint.", "warning");
-      }
-    }
 
-    // Auto polling every 2s
-    setInterval(fetchState, 2000);
-    fetchState();
-  </script>
+        function updateHUD() {
+            document.getElementById('money').innerText = "$" + playerStats.money.toLocaleString();
+            document.getElementById('stars').innerHTML = "⭐".repeat(playerStats.wanted_level) || "None";
+        }
+
+        // 5. Game Loop (Controls Movement & Camera)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            let currentObject = inCar ? car : player;
+
+            if (keys['w']) currentObject.translateZ(-moveSpeed);
+            if (keys['s']) currentObject.translateZ(moveSpeed);
+            if (keys['a']) currentObject.rotation.y += 0.05;
+            if (keys['d']) currentObject.rotation.y -= 0.05;
+
+            // Camera follows player/car
+            camera.position.set(currentObject.position.x, currentObject.position.y + 5, currentObject.position.z + 10);
+            camera.lookAt(currentObject.position);
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        authenticateUser();
+        setInterval(fetchServerState, 5000); // Auto sync every 5 seconds
+        animate();
+    </script>
 </body>
 </html>
