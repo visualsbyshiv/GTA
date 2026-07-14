@@ -21,6 +21,7 @@ export interface PlayerSave {
   pos_y: number;
   pos_z: number;
   rot_yaw: number;
+  wanted_level: number;
   completed_missions: string[];
 }
 
@@ -80,6 +81,7 @@ export async function initializeDatabase() {
           pos_y FLOAT DEFAULT 0.0,
           pos_z FLOAT DEFAULT 100.0,
           rot_yaw FLOAT DEFAULT 0.0,
+          wanted_level INTEGER DEFAULT 0,
           completed_missions VARCHAR(100)[] DEFAULT '{}',
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -114,6 +116,7 @@ export async function createUser(username: string, passwordHash: string): Promis
       pos_y: 0.0,
       pos_z: 100.0,
       rot_yaw: 0.0,
+      wanted_level: 0,
       completed_missions: [],
     });
 
@@ -148,7 +151,7 @@ export async function getPlayerSave(userId: number): Promise<PlayerSave | null> 
     return save || null;
   } else {
     const result = await pgPool.query(
-      'SELECT health, armor, money, pos_x, pos_y, pos_z, rot_yaw, completed_missions FROM player_saves WHERE user_id = $1',
+      'SELECT health, armor, money, pos_x, pos_y, pos_z, rot_yaw, wanted_level, completed_missions FROM player_saves WHERE user_id = $1',
       [userId]
     );
     return result.rows.length > 0 ? result.rows[0] : null;
@@ -164,6 +167,7 @@ export async function updatePlayerSave(
   posY?: number,
   posZ?: number,
   rotYaw?: number,
+  wantedLevel?: number,
   completedMission?: string
 ): Promise<PlayerSave> {
   if (useMockDb) {
@@ -178,6 +182,7 @@ export async function updatePlayerSave(
         pos_y: 0.0,
         pos_z: 100.0,
         rot_yaw: 0.0,
+        wanted_level: 0,
         completed_missions: [],
       };
       mockPlayerSaves.push(save);
@@ -190,6 +195,7 @@ export async function updatePlayerSave(
     if (posY !== undefined && posY !== null) save.pos_y = posY;
     if (posZ !== undefined && posZ !== null) save.pos_z = posZ;
     if (rotYaw !== undefined && rotYaw !== null) save.rot_yaw = rotYaw;
+    if (wantedLevel !== undefined && wantedLevel !== null) save.wanted_level = wantedLevel;
     if (completedMission !== undefined && completedMission !== null) {
       if (!save.completed_missions.includes(completedMission)) {
         save.completed_missions.push(completedMission);
@@ -199,8 +205,8 @@ export async function updatePlayerSave(
     return save;
   } else {
     const query = `
-      INSERT INTO player_saves (user_id, health, armor, money, pos_x, pos_y, pos_z, rot_yaw, completed_missions)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CASE WHEN $9::varchar IS NOT NULL THEN ARRAY[$9::varchar] ELSE '{}'::varchar[] END)
+      INSERT INTO player_saves (user_id, health, armor, money, pos_x, pos_y, pos_z, rot_yaw, wanted_level, completed_missions)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $10::varchar IS NOT NULL THEN ARRAY[$10::varchar] ELSE '{}'::varchar[] END)
       ON CONFLICT (user_id) DO UPDATE SET
         health = COALESCE(EXCLUDED.health, player_saves.health),
         armor = COALESCE(EXCLUDED.armor, player_saves.armor),
@@ -212,9 +218,10 @@ export async function updatePlayerSave(
         pos_y = COALESCE(EXCLUDED.pos_y, player_saves.pos_y),
         pos_z = COALESCE(EXCLUDED.pos_z, player_saves.pos_z),
         rot_yaw = COALESCE(EXCLUDED.rot_yaw, player_saves.rot_yaw),
+        wanted_level = COALESCE(EXCLUDED.wanted_level, player_saves.wanted_level),
         completed_missions = CASE 
-          WHEN $9::varchar IS NOT NULL AND NOT ($9::varchar = ANY(player_saves.completed_missions))
-          THEN array_append(player_saves.completed_missions, $9::varchar)
+          WHEN $10::varchar IS NOT NULL AND NOT ($10::varchar = ANY(player_saves.completed_missions))
+          THEN array_append(player_saves.completed_missions, $10::varchar)
           ELSE player_saves.completed_missions
         END,
         updated_at = CURRENT_TIMESTAMP
@@ -230,6 +237,7 @@ export async function updatePlayerSave(
       posY,
       posZ,
       rotYaw,
+      wantedLevel,
       completedMission
     ];
 

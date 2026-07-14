@@ -22,7 +22,7 @@ router.get('/:userId', async (req: any, res: any) => {
 
 router.post('/:userId', async (req: any, res: any) => {
   const { userId } = req.params;
-  const { health, armor, money, pos_x, pos_y, pos_z, rot_yaw, completed_mission } = req.body;
+  const { health, armor, money, pos_x, pos_y, pos_z, rot_yaw, wanted_level, completed_mission } = req.body;
 
   try {
     const saveState = await updatePlayerSave(
@@ -34,6 +34,7 @@ router.post('/:userId', async (req: any, res: any) => {
       pos_y,
       pos_z,
       rot_yaw,
+      wanted_level,
       completed_mission
     );
 
